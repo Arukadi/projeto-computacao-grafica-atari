@@ -7,8 +7,8 @@ O desenvolvimento utiliza OpenGL e o Freeglut.
 Esse projeto está configurado para rodar no Visual Studio 2019.
 
 Integrantes:
-Christian Meneghetti - RA 99855
-Gabriel Orpinelli - RA 101236
-Guilherme Hepfener - RA 99646
-João Ramos - RA 99571
-Wiliender Silva - RA 101027
+* Christian Meneghetti - RA 99855
+* Gabriel Orpinelli - RA 101236
+* Guilherme Hepfener - RA 99646
+* João Ramos - RA 99571
+* Wiliender Silva - RA 101027
