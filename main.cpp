@@ -12,15 +12,25 @@ struct Bloco {
 	int y;
 	int comp;
 	int alt;
+	int linhaChegada;
+	int existe;
 };
 
 float mapa[LINHAS][COLUNAS];
+float jogadorX = 0;
+float jogadorY = 0;
+int compJogador = 0;
+int altJogador = 0;
+Bloco blocos[BLOCOS];
 
+// Declaração das Funções
+void timer(int t);
 void desenharBloco(int x, int y, int alt, int comp);
 void display();
-void timer(int t);
 int colisao(float Ax, float Ay, float Bx, float By, float Acomp, float Bcomp, float Aalt, float Balt);
+int verificaColisaoBloco(float x, float y, float alt, float comp);
 void carregarMapa();
+void teclado(unsigned char tecla, int x, int y);
 
 int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);
@@ -32,6 +42,7 @@ int main(int argc, char* argv[]) {
 	// definir a função de callback de display
 	glutDisplayFunc(display);
 	glutTimerFunc(0, timer, 0);
+	glutKeyboardFunc(teclado);
 
 	// Laço principal do OpenGL.
 	glutMainLoop();
@@ -69,7 +80,6 @@ void display() {
 
 	// Carregar Mapa e os Blocos
 	carregarMapa();
-	Bloco blocos[BLOCOS];
 	for (int i = 0, x = 0, y = 0; i < BLOCOS; i++, x += 44)
 	{
 		if (x != 0 && x % 792 == 0) {
@@ -81,43 +91,87 @@ void display() {
 		blocos[i].y = y;
 		blocos[i].comp = 44;
 		blocos[i].alt = 40;
+		blocos[i].linhaChegada = 0;
+		blocos[i].existe = 0;
 	}
 
 	// Desenhar Blocos na Tela
 	for (int i = 0; i < BLOCOS; i++)
 	{
 		Bloco bloco = blocos[i];
-		int x = bloco.x / 44;
-		int y = bloco.y / 40;
+		int x = bloco.x / bloco.comp;
+		int y = bloco.y / bloco.alt;
 		int result = mapa[y][x];
 
 		if (result == 1) {
-			glColor4ub(231, 231, 73, 255);
+			blocos[i].existe = 1;
+			glColor4ub(231, 231, 73, 255); // Amarelo
 			desenharBloco(bloco.x, bloco.y, bloco.alt, bloco.comp);
 		}
-		else if (result == 2) {
-			glColor4ub(166, 96, 32, 255);
-			desenharBloco(bloco.x, bloco.y, bloco.alt, bloco.comp);
+		else if (result == 2 && jogadorX == 0 && jogadorY == 0) {
+			jogadorX = bloco.x + 1.5f;
+			jogadorY = bloco.y + 1.0f;
+			compJogador = bloco.comp - 3;
+			altJogador = bloco.alt - 2;
 		}
 		else if (result == 3) {
-			glColor4ub(227, 110, 109, 255);
+			blocos[i].existe = 1;
+			blocos[i].linhaChegada = 1;
+			glColor4ub(227, 110, 109, 255); // Salmão
 			desenharBloco(bloco.x, bloco.y, bloco.alt, bloco.comp);
 		}
 	}
+
+	glLoadIdentity();
+	glColor4ub(166, 96, 32, 255); // Marrom
+	desenharBloco(
+		jogadorX,
+		jogadorY,
+		altJogador,
+		compJogador
+	);
 
 	glPopMatrix();     // Fecha a Matriz
 	glutSwapBuffers(); // Caso utilize animação
 }
 
-// return 1 se não colidiu, 0 se colidiu
-int colisao(float Ax, float Ay, float Bx, float By, float Acomp, float Bcomp, float Aalt, float Balt) {
-	if (Ay + Aalt < By) return 1;
-	else if (Ay > By + Balt) return 1;
-	else if (Ax + Acomp < Bx) return 1;
-	else if (Ax > Bx + Bcomp) return 1;
+int colisao(float aX, float aY, float aAlt, float aComp, float bX, float bY, float bAlt, float bComp) {
+	if (aY + aAlt < bY) return 1;
+	else if (aY > bY + bAlt) return 1;
+	else if (aX + aComp < bX) return 1;
+	else if (aX > bX + bComp) return 1;
 
+	// return 1 se não colidiu, 0 se colidiu
 	return 0;
+}
 
+int verificaColisaoBloco(float x, float y, float alt, float comp) {
+	int temColisao = 0;
+	for (int i = 0; i < BLOCOS; i++)
+		if (blocos[i].existe == 1 &&
+			colisao(x, y, alt, comp, blocos[i].x, blocos[i].y, blocos[i].alt, blocos[i].comp) == 0)
+		{
+			if (blocos[i].linhaChegada == 1) {
+				jogadorX = 0;
+				jogadorY = 0;
+
+				printf("Jogo Finalizado!");
+			}
+			temColisao = 1;
+		}
+
+	return temColisao;
+}
+
+void teclado(unsigned char tecla, int x, int y) {
+	if (tecla == 'a' && verificaColisaoBloco(jogadorX - 10, jogadorY, altJogador, compJogador) == 0)
+		jogadorX -= 44;
+	if (tecla == 's' && verificaColisaoBloco(jogadorX, jogadorY - 10, altJogador, compJogador) == 0)
+		jogadorY -= 40;
+	if (tecla == 'd' && verificaColisaoBloco(jogadorX + 10, jogadorY, altJogador, compJogador) == 0)
+		jogadorX += 44;
+	if (tecla == 'w' && verificaColisaoBloco(jogadorX, jogadorY + 10, altJogador, compJogador) == 0)
+		jogadorY += 40;
 }
 
 void carregarMapa() {
